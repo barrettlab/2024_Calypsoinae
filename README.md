@@ -193,9 +193,9 @@ hybpiper stats -t_dna mega353.fasta gene new_corallorhiza_namelist.txt
 hybpiper recovery_heatmap seq_lengths.tsv
 
 ## RNA-seq and GO analyses
-ShinyGo: http://bioinformatics.sdstate.edu/go/
+ShinyGo: (http://bioinformatics.sdstate.edu/go/)
 
-Panther GO overrepresentation testing: https://pantherdb.org/tools/uploadFiles.jsp?#
+Panther GO overrepresentation testing: (https://pantherdb.org/tools/uploadFiles.jsp?#)
 
 ```
 
