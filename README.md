@@ -498,7 +498,7 @@ net5 = snaq!(net0,raxmlCF, hmax=5, filename="net5", seed=8701)
 ```
 
 
-## Divetime with LSD in IQtree2
+## Divtime with LSD in IQtree2
 ```bash
 iqtree2 -s newtargets_concat_calyps.fasta --date lsd_calib2.txt -te concat_h6.treefile -m GTR -o fastp-Brassavola-glauca_S40 -T 32 --date-tip 0 --date-root -60:-40 -u 1 --date-ci 1000 --redo
 
