@@ -251,11 +251,11 @@ iqtree2 -s Concatenated_alignments_bestparalog.fasta --prefix GTRGI -m GTR+FO*H8
 
 
 ## Astral and Astral Pro
-
+```bash
 conda activate aster
 
 astral4 -t 20 -o bestparalog_astral.tre -i bestparalog_treeshrink_output.treefile 2>LOG_FILE
-
+```
 
 ## Plastid analyses & tree: GTRGI, Ghost heterotachy model (Crotty et al., 2020) for 2-8 rate classes
 ```bash
