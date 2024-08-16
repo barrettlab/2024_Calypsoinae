@@ -237,17 +237,6 @@ sed 's/.main//g' < treeshrink_allparalogs_output.treefile | sed 's/\.\d:/:/g' > 
 ```
 
 ## IQtree concat (GTRG, GHOST models)
-
-
-
-## Astral and Astral Pro
-
-conda activate aster
-
-astral4 -t 20 -o bestparalog_astral.tre -i bestparalog_treeshrink_output.treefile 2>LOG_FILE
-
-
-## Plastid analyses & tree: GTRGI, Ghost heterotachy model (Crotty et al., 2020) for 8 rate classes
 ```bash
 iqtree2 -s Concatenated_alignments_bestparalog.fasta --prefix GTRGI -m GTR+G+I -T 30
 iqtree2 -s Concatenated_alignments_bestparalog.fasta --prefix GTRGI -m MFP -T 30
@@ -261,6 +250,25 @@ iqtree2 -s Concatenated_alignments_bestparalog.fasta --prefix GTRGI -m GTR+FO*H8
 ```
 
 
+## Astral and Astral Pro
+
+conda activate aster
+
+astral4 -t 20 -o bestparalog_astral.tre -i bestparalog_treeshrink_output.treefile 2>LOG_FILE
+
+
+## Plastid analyses & tree: GTRGI, Ghost heterotachy model (Crotty et al., 2020) for 2-8 rate classes
+```bash
+iqtree2 -s plastid_concat.fasta --prefix GTRGI -m GTR+G+I -T 30
+iqtree2 -s plastid_concat.fasta --prefix GTRGI -m MFP -T 30
+iqtree2 -s plastid_concat.fasta --prefix GTRGI -m GTR+FO*H2 -T 30
+iqtree2 -s plastid_concat.fasta --prefix GTRGI -m GTR+FO*H4 -T 30
+iqtree2 -s plastid_concat.fasta --prefix GTRGI -m GTR+FO*H6 -T 30
+iqtree2 -s plastid_concat.fasta --prefix GTRGI -m GTR+FO*H8 -T 30
+
+# Choose lowest BIC score + highest BIC weight
+
+```
 
 ## gCF, sCF, plotting
 
@@ -491,11 +499,118 @@ net5 = snaq!(net0,raxmlCF, hmax=5, filename="net5", seed=8701)
 
 
 ## Divetime with LSD in IQtree2
+```bash
+iqtree2 -s newtargets_concat_calyps.fasta --date lsd_calib2.txt -te concat_h6.treefile -m GTR -o fastp-Brassavola-glauca_S40 -T 32 --date-tip 0 --date-root -60:-40 -u 1 --date-ci 1000 --redo
 
-## Bind.tip, RASP analyses
+#Open/edit with FigTree (http://tree.bio.ed.ac.uk/software/figtree/)
+
+```
 
 ## Stochastic character mapping
+```{r}
+## Ancestral state reconstruction of Corallorhiza/Oreorchis floral characters
 
+setwd("H:/0001_research/0001_manuscripts/2022_Calypsoinae/2024_03_22_newtargets")
+
+library(phytools)
+library(geiger)
+
+# Charater state definitions
+# ltype 	 labellum type: 	0 = thin, flat, white/yellow/cream/orange; 1= thick, boat-shaped, red/purple/yellow, striped
+# lobe  	 labellum lobes:	0 = absent; 1 = present
+# callus	 fused lamellae:	0 = absent; 1 = present
+# mentum	 nectar spur:		0 = absent; 1 = present
+
+# Read in tree. Chose to use the concatenated tree under GHOST H6 heterotachy model as the most accurate representation of branch lengths
+tre <- read.tree("concat_h6_boot.contree")
+
+# Drop tips not of interest, set tip labels from tree, save as csv, then add characters/states to csv and re-import
+
+tre2<-drop.tip(tre,c("fastp-Brassavola-glauca_S40", "fastp-Aplectrum-hyemale_S8", "fastp-Cremastra-aphylla_S18", "fastp-Cremastra-saprophytica_S22", "fastp-Cremastra-appendiculata_S20", "fastp-Cremastra-variabilis_S24", "fastp-Cremastra-unguiculata_S43", "fastp-Govenia-capitata_S42", "fastp-Govenia-superba_S6", "fastp-Dactylostalix-ringens_S39", "fastp-Ephippianthus-sawadanus_S31", "fastp-Ephippianthus-schmidtii_S26", "fastp-Calypso-bulbosa-Asia_S37", "fastp-Calypso-bulbosa-var-americana_S4", "fastp-Changnienia-amoena_S44", "fastp-Tipularia-japonica_S45", "fastp-Coelia-triptera_S10", "fastp-Yoania-japonica_S12", "fastp-Yoania-prainii_S14"))
+
+labels <- tre2$tip.label
+write.csv(labels,file="tiplabels.csv")
+
+# Have a look at the tree
+plot(ladderize(tre2))
+
+# Add a new tip to the tree
+
+tre3<-bind.tip(tre2, "Corallorhiza_sinensis", edge.length=0.05, where=28, position=0.5)
+
+
+# Use penalized likelihood to make the tree ultrametric
+tre3<-chronos(tre2)
+
+# Have a look
+plot(ladderize(tre3))
+
+# preserve branching order as ladderized
+tre4<-ladderize(tre3)
+
+# Have a look
+plot(tre4)
+
+# Read in the character data, with column 1 = to the tip labels, and 2-5 as the characters/states
+tips <-read.csv("tiplabels.csv",header=T,row.names = 1)
+
+# Define characters as vectors
+ltype<-as.matrix(tips)[,1]
+lobe<-as.matrix(tips)[,2]
+callus<-as.matrix(tips)[,3]
+mentum<-as.matrix(tips)[,4]
+troph<-as.matrix(tips)[,6]
+
+# Use an MCMC implementation of stochastic character mapping with phytools
+
+models <- list("ER","ARD","SYM","loss")
+
+# where ordered is...
+
+loss<-matrix(c(0,0,0,1,0,0,1,1,0),nrow=3)
+
+mtrees.ltype<-make.simmap(tre9,ltype,model=models,nsim=1000)
+mtrees.lobe<-make.simmap(tre9,lobe,model=models,nsim=1000)
+mtrees.callus<-make.simmap(tre9,callus,model=models,nsim=1000)
+mtrees.mentum<-make.simmap(tre9,mentum,model=models,nsim=1000)
+mtrees.troph<-make.simmap(tre9,troph,model=models,nsim=1000)
+
+pd.ltype<-summary(mtrees.ltype,plot=FALSE)
+pd.lobe<-summary(mtrees.lobe,plot=FALSE)
+pd.callus<-summary(mtrees.callus,plot=FALSE)
+pd.mentum<-summary(mtrees.mentum,plot=FALSE)
+pd.troph<-summary(mtrees.troph,plot=FALSE)
+
+# Set up a 3 x 2 plot
+par(mfrow = c(3, 2))
+
+#plotting
+
+cols = c("lightblue", "yellow", "red")
+
+plot(pd.ltype,fsize=0.8,ftype="i")
+title("Labellum type (thin 0, thick 1)")
+# add.simmap.legend(colors=cols)
+
+plot(pd.lobe,fsize=0.8,ftype="i")
+title("Labellum lobes (absent 0, present 1)")
+# add.simmap.legend(colors=cols)
+
+plot(pd.callus,fsize=0.8,ftype="i")
+title("Callus (absent 0, present 1)")
+# add.simmap.legend(colors=cols)
+
+plot(pd.mentum,fsize=0.8,ftype="i")
+title("Mentum (absent 0, present )1")
+# add.simmap.legend(colors=cols)
+
+plot(pd.troph,fsize=0.8,ftype="i")
+title("Trophic mode (leafy 0, PM 1, HM 1")
+## Add legend manually at the end
+add.simmap.legend(colors=cols,prompt=FALSE)
+
+#################
+```
 
 
 
