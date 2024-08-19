@@ -759,6 +759,30 @@ title("Trophic mode (leafy 0, PM 1, HM 1")
 add.simmap.legend(colors=cols,prompt=FALSE)
 
 #################
+
+## Updates 5-state analysis
+
+# character definitions
+1 - Leafy, presumably autotrophic (based on leaves present)
+2 - Leafy, partially mycoheterotrophic (based on isotopic evidence)
+3 - Leafless, presumably partially mycoheterotrophic (based on retention of all plastid photosynthetic genes but a lack of isotopic evidence)
+4 - Leafless, partially mycoheterotrophic (based on isotopic evidence)
+5 - Leafless, holomycotrophic (based on losses of several plastid photosynthetic genes; isotopic evidence for C. striata and C. maculata but not C. sinensis)
+
+# transition matrix
+loss3<-matrix(c(0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,1,1,0,0,0,1,1,1,1,0),nrow = 5, ncol = 5)
+loss3
+     [,1] [,2] [,3] [,4] [,5]
+[1,]    0    1    1    1    1
+[2,]    0    0    1    1    1
+[3,]    0    0    0    0    1
+[4,]    0    0    0    0    1
+[5,]    0    0    0    0    0
+
+# simmap & summarize on tree
+mtrees.troph<-make.simmap(tre2,troph,model=loss3,nsim=100)
+pd.troph<-summary(mtrees.troph,plot=TRUE)
+ 
 ```
 
 
