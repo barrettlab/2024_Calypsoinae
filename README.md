@@ -154,7 +154,7 @@ sudo mv *.html html
 ```
 
 
-## Running hybpiper on RNA-seq and DNAse-cap data simultaneously to identify potential A353 gene losses
+## Running hybpiper on RNA-seq and DNA-seq-cap data simultaneously to identify potential A353 gene losses
 
 ```bash
 ## Created a text file called new_corallorhiza_namelist.txt, which contained the following lines:
@@ -220,7 +220,156 @@ cd ..
 
 iqtree2 -S trimal_geneious --prefix iqtree_bestparalog -m GTR+G+I -T 32
 ```
+## PhyKit to identify consistently long branches among gene trees
 
+```bash
+
+conda activate /usr/local/src/conda_envs/binf
+
+# Input file containing gene trees in Newick format
+gene_tree_file="output2.treefile"
+
+# Output matrix file
+output_matrix="lb_scores_matrix.txt"
+
+# Temporary directory for storing intermediate tree files
+temp_dir="./temp_trees"
+mkdir -p "$temp_dir"
+
+# Create an associative array to store the taxa and scores for each gene tree
+declare -A lb_scores
+
+# Initialize a list to track taxa
+declare -a taxa_list
+
+# Counter for gene trees
+tree_counter=0
+
+# Read each gene tree from the file
+while read -r gene_tree; do
+    # Skip empty lines
+    if [ -z "$gene_tree" ]; then
+        continue
+    fi
+
+    # Increment the tree counter
+    tree_counter=$((tree_counter + 1))
+
+    # Create a temporary file for the current gene tree
+    temp_tree_file="${temp_dir}/temp_tree_${tree_counter}.treefile"
+    echo "$gene_tree" > "$temp_tree_file"
+
+    # Run phykit lb_score and capture the output
+    lb_output=$(phykit lb_score "$temp_tree_file" --verbose)
+
+    # Parse the output and store the scores in the associative array
+    while read -r line; do
+        if [[ "$line" =~ ^[^#]+ ]]; then
+            taxon=$(echo "$line" | awk '{print $1}')
+            score=$(echo "$line" | awk '{print $2}')
+            
+            # Store taxa in taxa_list if not already present
+            if ! [[ " ${taxa_list[@]} " =~ " ${taxon} " ]]; then
+                taxa_list+=("$taxon")
+            fi
+            
+            # Store score in the associative array, key is taxon + gene tree number
+            lb_scores["$taxon,$tree_counter"]="$score"
+        fi
+    done <<< "$lb_output"
+
+done < "$gene_tree_file"
+
+# Generate the matrix and write to the output file
+{
+    # Print the header row (Taxa + GeneTree columns)
+    echo -n "Taxa"
+    for i in $(seq 1 $tree_counter); do
+        echo -n -e "\tGeneTree_$i"
+    done
+    echo
+
+    # Print the matrix rows (Taxa + Scores for each gene tree)
+    for taxon in "${taxa_list[@]}"; do
+        echo -n "$taxon"
+        for i in $(seq 1 $tree_counter); do
+            score=${lb_scores["$taxon,$i"]}
+            if [ -z "$score" ]; then
+                echo -n -e "\tNA"  # Missing score
+            else
+                echo -n -e "\t$score"
+            fi
+        done
+        echo
+    done
+} > "$output_matrix"
+
+# Clean up temporary files
+rm -rf "$temp_dir"
+
+echo "Long branch score matrix saved to $output_matrix"
+
+```
+
+```{r}
+# Load required libraries
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    install.packages("ggplot2")
+}
+if (!requireNamespace("viridis", quietly = TRUE)) {
+    install.packages("viridis")
+}
+library(ggplot2)
+library(viridis)  # For the viridis color palette
+library(dplyr)    # For data manipulation
+
+# Read the lb_scores.csv file
+lb_scores <- read.csv("lb_scores.csv", row.names = 1)
+
+# Check the data
+head(lb_scores)
+
+# Calculate mean and standard error for each taxon
+mean_scores <- rowMeans(lb_scores, na.rm = TRUE)
+stderr_scores <- apply(lb_scores, 1, function(x) sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x))))
+
+# Create a data frame for plotting
+plot_data <- data.frame(
+  Taxon = rownames(lb_scores),
+  Mean = mean_scores,
+  SE = stderr_scores
+)
+
+# Remove "fastp-" from taxon names
+plot_data$Taxon <- gsub("^fastp-", "", plot_data$Taxon)
+
+# Extract genus (first part before the first "-")
+plot_data$Genus <- sub("-.*$", "", plot_data$Taxon)
+
+# Reorder the Taxon factor by mean LB score within each genus
+plot_data <- plot_data %>%
+  arrange(Genus, Mean) %>%
+  mutate(Taxon = factor(Taxon, levels = Taxon))
+
+# Create a color palette using viridis scaled by the mean LB score
+plot_data$Color <- viridis(100)[cut(plot_data$Mean, breaks = 100)]
+# used chatgpt to help with the plotting code
+# Plot using ggplot2
+ggplot(plot_data, aes(y = Taxon, x = Mean, fill = Mean)) +
+  geom_col() +
+  geom_errorbarh(aes(xmin = Mean - SE, xmax = Mean + SE), height = 0.2, color = "black") +
+  scale_fill_viridis_c() +  # Apply viridis color palette scaled by mean LB scores
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(angle = 0, hjust = 1, size = 8),  # Adjust y labels
+    axis.title.y = element_blank()  # Remove y-axis title
+  ) +
+  labs(
+    x = "Mean LB Score",
+    title = "Mean LB Scores per Taxon with Error Bars",
+    fill = "Mean LB Score"
+  )
+```
 
 ## TreeShrink
 
