@@ -19,8 +19,14 @@ cd /data/cbarrett/2024_Calypsoinae
 sudo mkdir reads
 sudo mv *.fastq.gz reads
 cd reads
+
+# Ubuntu (myco server, Thorny Flat)
 rename 's/_001.fastq.gz/.fastq.gz/g' *.fastq.gz
 rename 's/_L001//g' *.fastq.gz
+
+# RedHat (newer server)
+rename "_001.fastq.gz" ".fastq.gz"  *.fastq.gz
+rename "_L001" ""  *.fastq.gz
 
 ## make a clean reads dir and run FASTP (trim adapters, poly-X, low quality bases)
 
