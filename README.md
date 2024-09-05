@@ -8,6 +8,17 @@
 
 ## Craig F. Barrett1*, John V. Freudenstein2, Samuel V. Skibicki1, Brandon T. Sinn3,4, Tomohisa Yukawa5, Kenji Suesugu6,7
 
+## Installing hybpiper with Conda
+
+```bash
+conda create -n hybpiper bioconda::hybpiper # This creates a new environment and install hybpiper into that
+conda activate hybpiper  # This should work, but if it doesn't, try:
+
+conda config --set channel_priority flexible
+conda activate hybpiper
+conda install bioconda::hybpiper
+```
+
 ## Quality and adapter trimming with fastp
 
 ```bash
