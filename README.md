@@ -635,7 +635,7 @@ net0 = snaq!(astraltree,raxmlCF, hmax=0, filename="net0", seed=1234)
 
 ## 12. Run the second network analysis with H=1, allowing 1 hybridization event, using 'net0' as starting tree
 
-net1 = snaq!(net0, raxmlCF, hmax=1, filename="net1", seed=2345) # this runs for ~30 min
+net1 = snaq!(astraltree, raxmlCF, hmax=1, filename="net1", seed=2345) # this runs for ~30 min
 
 ## 13. Check out the output
 
@@ -658,9 +658,9 @@ plot(net2, showgamma=true);
 ### Save the likelihoods for AIC calcs
 
 
-net3 = snaq!(net0,raxmlCF, hmax=3, filename="net3", seed=4567)
-net4 = snaq!(net0,raxmlCF, hmax=4, filename="net4", seed=1437)
-net5 = snaq!(net0,raxmlCF, hmax=5, filename="net5", seed=8701)
+net3 = snaq!(astraltree,raxmlCF, hmax=3, filename="net3", seed=4567)
+net4 = snaq!(astraltree,raxmlCF, hmax=4, filename="net4", seed=1437)
+net5 = snaq!(astraltree,raxmlCF, hmax=5, filename="net5", seed=8701)
 ```
 
 
